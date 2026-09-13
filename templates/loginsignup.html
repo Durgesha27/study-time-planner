@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyWise - Login & Sign Up</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e8eef7 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      max-width: 1200px;
+      width: 100%;
+      align-items: center;
+    }
+
+    .left-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+    }
+
+    .illustration {
+      width: 100%;
+      max-width: 400px;
+      height: 400px;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+
+    .illustration svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .tagline {
+      font-size: 18px;
+      color: #4b5563;
+      margin-top: 20px;
+      font-weight: 500;
+    }
+
+    .right-section {
+      background: white;
+      padding: 50px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-header {
+      margin-bottom: 30px;
+    }
+
+    .form-header h2 {
+      font-size: 24px;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .form-header p {
+      color: #7c8599;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e0e4eb;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #7c8599;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      transition: color 0.2s ease;
+    }
+
+    .password-toggle:hover {
+      color: #22c55e;
+    }
+
+    .eye-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .forgot-password {
+      text-align: right;
+      margin-top: 8px;
+    }
+
+    .forgot-password a {
+      color: #22c55e;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .forgot-password a:hover {
+      color: #16a34a;
+    }
+
+    button.btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+      font-family: inherit;
+    }
+
+    button.btn:hover {
+      background: #16a34a;
+      transform: translateY(-2px);
+    }
+
+    button.btn:active {
+      transform: translateY(0);
+    }
+
+    .toggle-form {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e0e4eb;
+      font-size: 14px;
+      color: #7c8599;
+    }
+
+    .toggle-form a {
+      color: #22c55e;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .toggle-form a:hover {
+      color: #16a34a;
+    }
+
+    .form-container {
+      display: none;
+    }
+
+    .form-container.active {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      .right-section {
+        padding: 30px;
+      }
+
+      .illustration {
+        max-width: 300px;
+        height: 300px;
+      }
+
+      .form-header h2 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left-section">
+      <div class="logo">
+        <div class="logo-icon">📚</div>
+        <span>StudyWise</span>
+      </div>
+      
+      <div class="illustration">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <!-- Gears -->
+          <circle cx="120" cy="100" r="30" fill="none" stroke="#3b82f6" stroke-width="3"/>
+          <circle cx="120" cy="100" r="20" fill="none" stroke="#3b82f6" stroke-width="2"/>
+          <circle cx="120" cy="100" r="10" fill="#3b82f6"/>
+          
+          <circle cx="220" cy="80" r="35" fill="none" stroke="#10b981" stroke-width="3"/>
+          <circle cx="220" cy="80" r="25" fill="none" stroke="#10b981" stroke-width="2"/>
+          
+          <circle cx="160" cy="200" r="28" fill="none" stroke="#f59e0b" stroke-width="2"/>
+          <circle cx="160" cy="200" r="18" fill="none" stroke="#f59e0b" stroke-width="1.5"/>
+          
+          <!-- Student -->
+          <ellipse cx="200" cy="180" rx="40" ry="45" fill="#fbbf24"/>
+          <circle cx="200" cy="140" r="25" fill="#f59e0b"/>
+          <circle cx="190" cy="135" r="5" fill="#1a1a1a"/>
+          <circle cx="210" cy="135" r="5" fill="#1a1a1a"/>
+          <path d="M 200 145 Q 205 150 200 155 Q 195 150 200 145" fill="#1a1a1a"/>
+          
+          <!-- Tablet -->
+          <rect x="160" y="200" width="80" height="100" rx="5" fill="#e5e7eb" stroke="#6b7280" stroke-width="2"/>
+          <rect x="165" y="205" width="70" height="70" fill="#3b82f6"/>
+          <rect x="165" y="280" width="70" height="10" fill="#10b981"/>
+          
+          <!-- Clock -->
+          <circle cx="280" cy="250" r="40" fill="none" stroke="#06b6d4" stroke-width="3"/>
+          <circle cx="280" cy="250" r="35" fill="white" stroke="#06b6d4" stroke-width="2"/>
+          <line x1="280" y1="250" x2="280" y2="220" stroke="#06b6d4" stroke-width="2"/>
+          <line x1="280" y1="250" x2="300" y2="250" stroke="#06b6d4" stroke-width="2"/>
+          <circle cx="280" cy="250" r="4" fill="#06b6d4"/>
+          
+          <!-- Checkmark -->
+          <circle cx="320" cy="220" r="20" fill="#10b981"/>
+          <path d="M 315 220 L 318 223 L 325 216" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          
+          <!-- Books -->
+          <rect x="100" y="310" width="30" height="50" rx="2" fill="#059669" stroke="#047857" stroke-width="1"/>
+          <rect x="75" y="320" width="30" height="50" rx="2" fill="#10b981" stroke="#059669" stroke-width="1"/>
+          <rect x="130" y="315" width="30" height="50" rx="2" fill="#34d399" stroke="#10b981" stroke-width="1"/>
+          
+          <!-- Coffee cup -->
+          <rect x="240" y="320" width="40" height="35" rx="3" fill="#f97316" stroke="#ea580c" stroke-width="1.5"/>
+          <rect x="245" y="325" width="30" height="20" fill="#fbbf24"/>
+          <ellipse cx="285" cy="322" rx="8" ry="10" fill="none" stroke="#ea580c" stroke-width="1.5"/>
+        </svg>
+      </div>
+      
+      <p class="tagline">Ready to focus?</p>
+    </div>
+
+    <div class="right-section">
+      <!-- Login Form -->
+      <div class="form-container active" id="loginForm">
+        <div class="form-header">
+          <h2>Welcome Back!</h2>
+          <p>Log in to your account to continue</p>
+        </div>
+
+        <form id="actualLoginForm">
+    <div class="form-group">
+      <label for="login-username">Username</label> <!-- Changed label slightly to match schema -->
+      <div class="input-wrapper">
+        <input type="text" id="login-username" name="username" placeholder="Your username" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="login-password">Password</label>
+      <div class="input-wrapper">
+        <input type="password" id="login-password" name="password" placeholder="••••••••" required>
+        <button type="button" class="password-toggle" onclick="togglePassword('login-password')">
+          <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+      <div class="forgot-password">
+        <a href="#forgot">Forgot Password?</a>
+      </div>
+    </div>
+
+    <button type="submit" class="btn">LOG IN</button>
+  </form>
+
+  <div class="toggle-form">
+    New to StudyWise? <a onclick="switchForm('signup')">Sign Up Here</a>
+  </div>
+</div>
+
+<!-- Sign Up Form -->
+<div class="form-container" id="signupForm">
+  <div class="form-header">
+    <h2>Create Account</h2>
+    <p>Join StudyWise and start learning</p>
+  </div>
+
+  <!-- FIX: Removed onsubmit override, added names to inputs -->
+  <form id="actualSignupForm">
+    <div class="form-group">
+      <label for="signup-name">Full Name</label>
+      <div class="input-wrapper">
+        <input type="text" id="signup-name" name="name" placeholder="Your full name" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="signup-username">Username</label> <!-- Added Username Input to match schema -->
+      <div class="input-wrapper">
+        <input type="text" id="signup-username" name="username" placeholder="Choose a username" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="signup-email">Email Address</label>
+      <div class="input-wrapper">
+        <input type="email" id="signup-email" name="email" placeholder="your@email.com" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="signup-password">Password</label>
+      <div class="input-wrapper">
+        <input type="password" id="signup-password" name="password" placeholder="••••••••" required>
+        <button type="button" class="password-toggle" onclick="togglePassword('signup-password')">
+          <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="signup-confirm">Confirm Password</label>
+      <div class="input-wrapper">
+        <input type="password" id="signup-confirm" placeholder="••••••••" required>
+        <button type="button" class="password-toggle" onclick="togglePassword('signup-confirm')">
+          <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <button type="submit" class="btn">SIGN UP</button>
+  </form>
+
+  <div class="toggle-form">
+    Already have an account? <a onclick="switchForm('login')">Log In Here</a>
+  </div>
+</div>
+
+<!--Replace your script tag section completely with this logic -->
+<script>
+  function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const btn = event.target.closest('.password-toggle');
+    const svg = btn.querySelector('svg');
+    
+    if (input.type === 'password') {
+      input.type = 'text';
+      svg.style.opacity = '0.6';
+    } else {
+      input.type = 'password';
+      svg.style.opacity = '1';
+    }
+  }
+
+  function switchForm(formType) {
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+
+    if (formType === 'login') {
+      loginForm.classList.add('active');
+      signupForm.classList.remove('active');
+    } else {
+      signupForm.classList.add('active');
+      loginForm.classList.remove('active');
+    }
+  }
+
+  // --- CONNECTED LOGIN SUBMIT HANDLING ---
+  document.getElementById('actualLoginForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      const result = await response.json();
+      if (response.ok && result.success) {
+        window.location.href = '/home'; // Redirects straight to your dashboard page!
+      } else {
+        alert(result.error || 'Invalid credentials');
+      }
+    } catch (err) {
+      alert('An error occurred during login. Please try again.');
+    }
+  });
+
+  // --- CONNECTED SIGNUP SUBMIT HANDLING ---
+  document.getElementById('actualSignupForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const password = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+
+    if (password !== confirm) {
+      alert('Passwords do not match!');
+      return;
+    }
+
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      const result = await response.json();
+      if (response.ok) {
+        alert('Account created successfully! Redirecting to login page...');
+        switchForm('login');
+      } else {
+        alert(result.error || 'Registration failed');
+      }
+    } catch (err) {
+      alert('An error occurred during registration.');
+    }
+  });
+
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const btn = event.target.closest('.password-toggle');
+      const svg = btn.querySelector('svg');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        svg.style.opacity = '0.6';
+      } else {
+        input.type = 'password';
+        svg.style.opacity = '1';
+      }
+    }
+
+    function switchForm(formType) {
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+
+      if (formType === 'login') {
+        loginForm.classList.add('active');
+        signupForm.classList.remove('active');
+      } else {
+        signupForm.classList.add('active');
+        loginForm.classList.remove('active');
+      }
+    }
+
+    function handleLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      alert(`Logging in with:\nEmail: ${email}\nPassword: ${password}`);
+    }
+
+    function handleSignup(event) {
+      event.preventDefault();
+      const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      const confirm = document.getElementById('signup-confirm').value;
+
+      if (password !== confirm) {
+        alert('Passwords do not match!');
+        return;
+      }
+
+      alert(`Signing up with:\nName: ${name}\nEmail: ${email}\nPassword: ${password}`);
+    }
+  </script>
+</body>
+</html>
