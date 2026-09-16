@@ -213,7 +213,12 @@ def goals_page():
 @app.route('/profile')
 @login_required
 def profile():
-    user = User.query.get(session['user_id'])
+    # Change this:
+# user = User.query.get(session['user_id'])
+
+# To this:
+    user = db.session.get(User, session['user_id'])
+
     subjects = Subject.query.filter_by(user_id=session['user_id']).all()
     
     return render_template('profile.html', user=user, subjects=subjects)

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE1;
+    --paper-raised:#FFFFFF;
+    --ink:#23241F;
+    --ink-soft:#6B6858;
+    --ink-faint:#9B9788;
+    --line:#DAD5C7;
+    --navy:#2B4570;
+    --navy-soft:#e6ebf2;
+    --ochre:#C97F1E;
+    --danger:#B5533C;
+    --radius-card: 10px;
+    --radius-pill: 999px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  ::selection{ background: var(--navy); color:#fff; }
+  :focus-visible{ outline:2px solid var(--navy); outline-offset:2px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001s !important; transition-duration:0.001s !important; }
+  }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:28px 20px 0; }
+
+  header.top{
+    display:flex; align-items:baseline; justify-content:space-between;
+    flex-wrap:wrap; gap:8px 20px;
+    margin-bottom:26px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+  }
+  header.top h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:32px;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  header.top .sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+  header.top .week-total{
+    font-family:'Fraunces', serif;
+    font-size:15px;
+    color:var(--ink-soft);
+    text-align:right;
+  }
+  header.top .week-total strong{
+    color:var(--ink);
+    font-size:20px;
+    font-weight:600;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:22px;
+  }
+  @media (min-width: 760px){
+    .layout{ grid-template-columns: 280px 1fr; align-items:start; }
+  }
+
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+  }
+  .panel-head{
+    padding:16px 18px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .panel-head h2{
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0;
+  }
+
+  /* ---------- Subjects panel ---------- */
+  #subjectList{ padding:6px 10px; }
+  .subject-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  .subject-row:last-child{ border-bottom:none; }
+  .swatch{
+    width:16px; height:16px; border-radius:50%;
+    flex:none; border:1px solid rgba(0,0,0,0.12);
+    cursor:pointer;
+    padding:0;
+  }
+  .subject-main{ flex:1; min-width:0; }
+  .subject-name-row{ display:flex; align-items:center; gap:8px; }
+  .subject-name{
+    font-weight:600; font-size:14.5px;
+    background:none; border:none; color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding:2px 4px; border-radius:4px; width:100%;
+    cursor:text;
+  }
+  .subject-name:focus{ background:var(--navy-soft); outline:none; }
+  .subject-meta{
+    display:flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--ink-soft); margin-top:5px;
+  }
+  .subject-meta input{
+    width:34px; border:none; border-bottom:1px solid var(--line);
+    background:none; font-family:'Inter',sans-serif; font-size:12px;
+    color:var(--ink-soft); text-align:right; padding:1px 2px;
+  }
+  .subject-meta input:focus{ outline:none; border-bottom-color:var(--navy); }
+  .progress-track{
+    height:5px; background:var(--paper); border-radius:var(--radius-pill);
+    margin-top:7px; overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; border-radius:var(--radius-pill);
+    transition:width 0.4s ease;
+  }
+  .subject-del{
+    flex:none; background:none; border:none; color:var(--ink-faint);
+    cursor:pointer; font-size:16px; line-height:1; padding:4px;
+    border-radius:4px;
+  }
+  .subject-del:hover{ color:var(--danger); background:#f7ece9; }
+
+  .color-popover{
+    position:absolute; z-index:20; background:var(--paper-raised);
+    border:1px solid var(--line); border-radius:8px; padding:8px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.12);
+  }
+  .color-popover button{
+    width:20px; height:20px; border-radius:50%; border:1px solid rgba(0,0,0,0.12);
+    cursor:pointer; padding:0;
+  }
+
+  .add-subject-block{ padding:12px 18px 16px; }
+  .btn-add-subject{
+    width:100%; background:none; border:1px dashed var(--ink-faint);
+    color:var(--ink-soft); border-radius:8px; padding:9px;
+    font-family:'Inter',sans-serif; font-size:13.5px; cursor:pointer;
+  }
+  .btn-add-subject:hover{ border-color:var(--navy); color:var(--navy); }
+
+  .new-subject-form{ padding:6px 4px 10px; }
+  .new-subject-form input[type=text]{
+    width:100%; padding:8px 10px; border:1px solid var(--line);
+    border-radius:6px; font-family:'Inter',sans-serif; font-size:14px;
+    margin-bottom:8px; background:var(--paper);
+  }
+  .new-subject-form .swatch-picker{ display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+  .new-subject-form .swatch-picker button{
+    width:20px; height:20px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0;
+  }
+  .new-subject-form .swatch-picker button.selected{ border-color:var(--ink); }
+  .new-subject-form .hours-row{
+    display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .new-subject-form .hours-row input{
+    width:50px; padding:5px 6px; border:1px solid var(--line); border-radius:5px;
+    font-family:'Inter',sans-serif;
+  }
+  .form-actions{ display:flex; gap:8px; }
+  .btn-primary, .btn-secondary{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+    padding:7px 14px; border-radius:6px; cursor:pointer; border:none;
+  }
+  .btn-primary{ background:var(--navy); color:#fff; }
+  .btn-primary:hover{ background:#233a5e; }
+  .btn-secondary{ background:none; color:var(--ink-soft); border:1px solid var(--line); }
+  .btn-secondary:hover{ border-color:var(--ink-faint); }
+
+  .empty-note{ padding:16px 18px; font-size:13px; color:var(--ink-soft); line-height:1.5; }
+
+  /* ---------- Weekly panel ---------- */
+  .day-tabs{
+    display:flex; overflow-x:auto; border-bottom:1px solid var(--line);
+    padding:0 10px;
+  }
+  .day-tab{
+    font-family:'Inter',sans-serif; background:none; border:none;
+    padding:14px 12px 12px; cursor:pointer; flex:none;
+    color:var(--ink-soft); font-size:13.5px; font-weight:600;
+    border-bottom:2px solid transparent; text-align:center;
+  }
+  .day-tab .d-hours{ display:block; font-size:11px; font-weight:400; color:var(--ink-faint); margin-top:2px; }
+  .day-tab.active{ color:var(--ink); border-bottom-color:var(--ochre); }
+  .day-tab.active .d-hours{ color:var(--ochre); }
+
+  #sessionList{ padding:8px 10px; min-height:60px; }
+  .session-row{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 10px; border-bottom:1px solid var(--line);
+  }
+  .session-row:last-child{ border-bottom:none; }
+  .session-bar{ width:4px; align-self:stretch; border-radius:3px; flex:none; }
+  .session-info{ flex:1; min-width:0; }
+  .session-subject{ font-weight:600; font-size:14.5px; }
+  .session-time{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+  .session-actions{ display:flex; gap:2px; flex:none; }
+  .icon-btn{
+    background:none; border:none; color:var(--ink-faint); cursor:pointer;
+    font-size:13px; padding:6px 7px; border-radius:5px;
+  }
+  .icon-btn:hover{ background:var(--paper); color:var(--ink); }
+  .icon-btn.del:hover{ color:var(--danger); background:#f7ece9; }
+
+  .add-session-block{ padding:10px 18px 18px; }
+  .btn-add-session{
+    background:none; border:1px dashed var(--ink-faint); color:var(--ink-soft);
+    border-radius:8px; padding:9px 14px; font-family:'Inter',sans-serif;
+    font-size:13.5px; cursor:pointer;
+  }
+  .btn-add-session:hover{ border-color:var(--navy); color:var(--navy); }
+
+  .session-form{
+    background:var(--paper); border:1px solid var(--line); border-radius:8px;
+    padding:14px; margin:4px 10px 14px;
+  }
+  .session-form .row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .session-form label{ font-size:12px; color:var(--ink-soft); display:block; margin-bottom:4px; }
+  .session-form select, .session-form input{
+    font-family:'Inter',sans-serif; font-size:14px; padding:7px 9px;
+    border:1px solid var(--line); border-radius:6px; background:#fff;
+  }
+  .session-form .field{ flex:1; min-width:110px; }
+
+  .day-empty{ padding:20px 10px; font-size:13.5px; color:var(--ink-soft); text-align:center; }
+
+  #toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:#fff; padding:9px 16px; border-radius:var(--radius-pill);
+    font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.25s, transform 0.25s;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Study Planner</h1>
+      <div class="sub">Set weekly hour goals per subject, then place sessions across your week.</div>
+    </div>
+    <div class="week-total" id="weekTotal"></div>
+  </header>
+
+  <div class="layout">
+    <div class="panel" id="subjectsPanel">
+      <div class="panel-head"><h2>Subjects</h2></div>
+      <div id="subjectList"></div>
+      <div class="add-subject-block" id="addSubjectBlock">
+        <button class="btn-add-subject" id="btnShowNewSubject">+ Add subject</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="day-tabs" id="dayTabs"></div>
+      <div id="sessionList"></div>
+      <div class="add-session-block" id="addSessionBlock">
+        <button class="btn-add-session" id="btnShowNewSession">+ Add session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  const PALETTE = ['#7A9471','#5B7C99','#C0744A','#8B5D7A','#D9A441','#6B7280','#B5533C','#4C8577'];
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const STORAGE_KEY = 'planner-data';
+
+  let state = { subjects: [], sessions: [] };
+  let activeDay = new Date().getDay(); // 0=Sun
+  activeDay = activeDay === 0 ? 6 : activeDay - 1; // convert to Mon=0..Sun=6
+  let newSubjectColor = PALETTE[0];
+  let editingSessionId = null;
+  let colorPopoverFor = null;
+
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+
+  function toast(msg){
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._h);
+    toast._h = setTimeout(()=> t.classList.remove('show'), 1800);
+  }
+
+  async function load(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        const parsed = JSON.parse(res.value);
+        state.subjects = parsed.subjects || [];
+        state.sessions = parsed.sessions || [];
+      }
+    }catch(e){
+      // no existing data yet, start fresh
+    }
+    renderAll();
+  }
+
+  async function save(){
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+    }catch(e){
+      toast("Couldn't save — changes may not persist");
+    }
+  }
+
+  function fmtHours(mins){
+    const h = mins/60;
+    return (h % 1 === 0) ? h.toFixed(0) : h.toFixed(1);
+  }
+
+  function fmtTime(t){
+    // t is "HH:MM" 24h -> "h:MM AM/PM"
+    const [h,m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12; if(h12===0) h12 = 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+
+  function addMinutesToTime(t, mins){
+    const [h,m] = t.split(':').map(Number);
+    let total = h*60+m+mins;
+    total = ((total % (24*60)) + 24*60) % (24*60);
+    const hh = Math.floor(total/60), mm = total%60;
+    return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  }
+
+  function subjectMinutes(subjectId){
+    return state.sessions
+      .filter(s => s.subjectId === subjectId)
+      .reduce((sum,s) => sum + s.duration, 0);
+  }
+
+  function weekTotalMinutes(){
+    return state.sessions.reduce((sum,s)=> sum+s.duration, 0);
+  }
+
+  /* ---------------- Rendering ---------------- */
+
+  function renderAll(){
+    renderSubjects();
+    renderDayTabs();
+    renderSessions();
+    renderWeekTotal();
+  }
+
+  function renderWeekTotal(){
+    const mins = weekTotalMinutes();
+    $('#weekTotal').innerHTML = `<strong>${fmtHours(mins)}h</strong> planned this week`;
+  }
+
+  function renderSubjects(){
+    const list = $('#subjectList');
+    list.innerHTML = '';
+    if(state.subjects.length === 0){
+      list.innerHTML = `<div class="empty-note">No subjects yet. Add one below to start planning your week.</div>`;
+      return;
+    }
+    state.subjects.forEach(sub => {
+      const planned = subjectMinutes(sub.id);
+      const targetMins = sub.targetHours * 60;
+      const pct = targetMins > 0 ? Math.min(100, Math.round((planned/targetMins)*100)) : 0;
+
+      const row = document.createElement('div');
+      row.className = 'subject-row';
+      row.innerHTML = `
+        <div style="position:relative;">
+          <button class="swatch" style="background:${sub.color}" data-swatch="${sub.id}" title="Change color" aria-label="Change color for ${sub.name}"></button>
+        </div>
+        <div class="subject-main">
+          <div class="subject-name-row">
+            <input class="subject-name" value="${escapeAttr(sub.name)}" data-name="${sub.id}" aria-label="Subject name">
+          </div>
+          <div class="subject-meta">
+            <span>${fmtHours(planned)}h /</span>
+            <input type="number" min="0" step="0.5" value="${sub.targetHours}" data-target="${sub.id}" aria-label="Weekly target hours">
+            <span>h target</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${sub.color}"></div></div>
+        </div>
+        <button class="subject-del" data-del="${sub.id}" aria-label="Delete ${sub.name}" title="Delete subject">✕</button>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function renderDayTabs(){
+    const tabs = $('#dayTabs');
+    tabs.innerHTML = '';
+    DAYS.forEach((d, i) => {
+      const mins = state.sessions.filter(s=>s.day===i).reduce((sum,s)=>sum+s.duration,0);
+      const btn = document.createElement('button');
+      btn.className = 'day-tab' + (i===activeDay ? ' active' : '');
+      btn.dataset.day = i;
+      btn.innerHTML = `${d}<span class="d-hours">${mins>0 ? fmtHours(mins)+'h' : '—'}</span>`;
+      tabs.appendChild(btn);
+    });
+  }
+
+  function renderSessions(){
+    const list = $('#sessionList');
+    list.innerHTML = '';
+    const daySessions = state.sessions
+      .filter(s => s.day === activeDay)
+      .slice()
+      .sort((a,b)=> a.start.localeCompare(b.start));
+
+    if(daySessions.length === 0){
+      list.innerHTML = `<div class="day-empty">Nothing planned for ${DAYS[activeDay]} yet.</div>`;
+    }
+
+    daySessions.forEach(sess => {
+      if(editingSessionId === sess.id){
+        list.appendChild(buildSessionForm(sess));
+        return;
+      }
+      const sub = state.subjects.find(s=>s.id===sess.subjectId);
+      const row = document.createElement('div');
+      row.className = 'session-row';
+      const endTime = addMinutesToTime(sess.start, sess.duration);
+      row.innerHTML = `
+        <div class="session-bar" style="background:${sub ? sub.color : '#ccc'}"></div>
+        <div class="session-info">
+          <div class="session-subject">${sub ? escapeHtml(sub.name) : 'Deleted subject'}</div>
+          <div class="session-time">${fmtTime(sess.start)} – ${fmtTime(endTime)} · ${fmtHours(sess.duration)}h</div>
+        </div>
+        <div class="session-actions">
+          <button class="icon-btn" data-edit="${sess.id}" aria-label="Edit session">Edit</button>
+          <button class="icon-btn del" data-delsess="${sess.id}" aria-label="Delete session">✕</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function buildSessionForm(existing){
+    const wrap = document.createElement('div');
+    wrap.className = 'session-form';
+    const subjOptions = state.subjects.map(s =>
+      `<option value="${s.id}" ${existing && existing.subjectId===s.id ? 'selected':''}>${escapeHtml(s.name)}</option>`
+    ).join('');
+    wrap.innerHTML = `
+      <div class="row">
+        <div class="field">
+          <label>Subject</label>
+          <select id="f-subject" style="width:100%">${subjOptions}</select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Start time</label>
+          <input type="time" id="f-start" value="${existing ? existing.start : '16:00'}" style="width:100%">
+        </div>
+        <div class="field">
+          <label>Duration (minutes)</label>
+          <input type="number" id="f-duration" min="5" step="5" value="${existing ? existing.duration : 60}" style="width:100%">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" id="f-save">${existing ? 'Save' : 'Add session'}</button>
+        <button class="btn-secondary" id="f-cancel">Cancel</button>
+      </div>
+    `;
+    wrap.querySelector('#f-save').addEventListener('click', () => {
+      const subjectId = wrap.querySelector('#f-subject').value;
+      const start = wrap.querySelector('#f-start').value;
+      const duration = Math.max(5, parseInt(wrap.querySelector('#f-duration').value || '0', 10));
+      if(!subjectId || !start){ toast('Fill in all fields'); return; }
+      if(existing){
+        existing.subjectId = subjectId;
+        existing.start = start;
+        existing.duration = duration;
+        editingSessionId = null;
+      }else{
+        state.sessions.push({ id: uid(), day: activeDay, subjectId, start, duration });
+        showingNewSession = false;
+      }
+      save();
+      renderAll();
+    });
+    wrap.querySelector('#f-cancel').addEventListener('click', () => {
+      editingSessionId = null;
+      showingNewSession = false;
+      renderSessions();
+    });
+    return wrap;
+  }
+
+  let showingNewSession = false;
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(str){ return escapeHtml(str); }
+
+  /* ---------------- Events ---------------- */
+
+  document.addEventListener('click', (e) => {
+    // day tab
+    const dayTab = e.target.closest('.day-tab');
+    if(dayTab){
+      activeDay = parseInt(dayTab.dataset.day, 10);
+      editingSessionId = null;
+      showingNewSession = false;
+      renderDayTabs();
+      renderSessions();
+      return;
+    }
+
+    // subject delete
+    const delBtn = e.target.closest('[data-del]');
+    if(delBtn){
+      const id = delBtn.dataset.del;
+      const sub = state.subjects.find(s=>s.id===id);
+      if(sub && confirm(`Delete "${sub.name}" and its scheduled sessions?`)){
+        state.subjects = state.subjects.filter(s=>s.id!==id);
+        state.sessions = state.sessions.filter(s=>s.subjectId!==id);
+        save();
+        renderAll();
+      }
+      return;
+    }
+
+    // swatch click -> open popover
+    const swatchBtn = e.target.closest('[data-swatch]');
+    if(swatchBtn){
+      openColorPopover(swatchBtn);
+      return;
+    }
+
+    // session edit
+    const editBtn = e.target.closest('[data-edit]');
+    if(editBtn){
+      editingSessionId = editBtn.dataset.edit;
+      showingNewSession = false;
+      renderSessions();
+      return;
+    }
+
+    // session delete
+    const delSess = e.target.closest('[data-delsess]');
+    if(delSess){
+      state.sessions = state.sessions.filter(s=>s.id!==delSess.dataset.delsess);
+      save();
+      renderAll();
+      return;
+    }
+
+    // add session button
+    if(e.target.id === 'btnShowNewSession'){
+      if(state.subjects.length === 0){
+        toast('Add a subject first');
+        return;
+      }
+      showingNewSession = true;
+      editingSessionId = null;
+      renderSessions();
+      const list = $('#sessionList');
+      list.appendChild(buildSessionForm(null));
+      return;
+    }
+
+    // add subject button
+    if(e.target.id === 'btnShowNewSubject'){
+      showNewSubjectForm();
+      return;
+    }
+
+    // close color popover if clicking elsewhere
+    if(!e.target.closest('.color-popover') && colorPopoverFor){
+      closeColorPopover();
+    }
+  });
+
+  document.addEventListener('change', (e) => {
+    if(e.target.matches('[data-name]')){
+      const sub = state.subjects.find(s=>s.id===e.target.dataset.name);
+      if(sub){
+        sub.name = e.target.value.trim() || sub.name;
+        e.target.value = sub.name;
+        save();
+        renderSessions(); // reflect renamed subject in session list
+      }
+    }
+    if(e.target.matches('[data-target]')){
+      const sub = state.subjects.find(s=>s.id===e.target.dataset.target);
+      if(sub){
+        sub.targetHours = Math.max(0, parseFloat(e.target.value) || 0);
+        save();
+        renderSubjects();
+      }
+    }
+  });
+
+  function openColorPopover(swatchBtn){
+    closeColorPopover();
+    const id = swatchBtn.dataset.swatch;
+    colorPopoverFor = id;
+    const pop = document.createElement('div');
+    pop.className = 'color-popover';
+    PALETTE.forEach(c => {
+      const b = document.createElement('button');
+      b.style.background = c;
+      b.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const sub = state.subjects.find(s=>s.id===id);
+        if(sub){ sub.color = c; save(); renderSubjects(); renderSessions(); renderDayTabs(); }
+        closeColorPopover();
+      });
+      pop.appendChild(b);
+    });
+    swatchBtn.parentElement.appendChild(pop);
+  }
+  function closeColorPopover(){
+    $$('.color-popover').forEach(p=>p.remove());
+    colorPopoverFor = null;
+  }
+
+  function showNewSubjectForm(){
+    const block = $('#addSubjectBlock');
+    newSubjectColor = PALETTE[state.subjects.length % PALETTE.length];
+    block.innerHTML = `
+      <div class="new-subject-form">
+        <input type="text" id="ns-name" placeholder="Subject name">
+        <div class="swatch-picker" id="ns-swatches"></div>
+        <div class="hours-row">
+          Weekly target: <input type="number" id="ns-hours" min="0" step="0.5" value="5"> h
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" id="ns-save">Add subject</button>
+          <button class="btn-secondary" id="ns-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    const picker = $('#ns-swatches');
+    PALETTE.forEach(c => {
+      const b = document.createElement('button');
+      b.style.background = c;
+      if(c === newSubjectColor) b.classList.add('selected');
+      b.addEventListener('click', () => {
+        newSubjectColor = c;
+        $$('#ns-swatches button').forEach(x=>x.classList.remove('selected'));
+        b.classList.add('selected');
+      });
+      picker.appendChild(b);
+    });
+    $('#ns-name').focus();
+    $('#ns-save').addEventListener('click', () => {
+      const name = $('#ns-name').value.trim();
+      if(!name){ toast('Give the subject a name'); return; }
+      const hours = Math.max(0, parseFloat($('#ns-hours').value) || 0);
+      state.subjects.push({ id: uid(), name, color: newSubjectColor, targetHours: hours });
+      save();
+      resetAddSubjectBlock();
+      renderAll();
+    });
+    $('#ns-cancel').addEventListener('click', resetAddSubjectBlock);
+  }
+
+  function resetAddSubjectBlock(){
+    $('#addSubjectBlock').innerHTML = `<button class="btn-add-subject" id="btnShowNewSubject">+ Add subject</button>`;
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>
