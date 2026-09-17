@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goals · Study Planner</title>
+
+<style>
+:root{
+    --paper:#EDEAE1;
+    --paper-raised:#FFF;
+    --ink:#23241F;
+    --ink-soft:#6B6858;
+    --ink-faint:#9B9788;
+    --line:#DAD5C7;
+    --navy:#2B4570;
+    --navy-soft:#e6ebf2;
+    --ochre:#C97F1E;
+    --danger:#B5533C;
+    --success:#4E7655;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html,body{
+    margin:0;
+    padding:0;
+}
+
+body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:Inter,Arial,sans-serif;
+    min-height:100vh;
+    padding-bottom:50px;
+}
+
+.wrap{
+    max-width:960px;
+    margin:auto;
+    padding:28px 20px;
+}
+
+header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:20px;
+    flex-wrap:wrap;
+    border-bottom:1px solid var(--line);
+    padding-bottom:18px;
+    margin-bottom:22px;
+}
+
+h1,h2,.serif{
+    font-family:Georgia,serif;
+}
+
+h1{
+    font-size:32px;
+    margin:0;
+}
+
+.sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin-top:5px;
+}
+
+nav{
+    display:flex;
+    gap:7px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+}
+
+nav a{
+    color:var(--ink-soft);
+    text-decoration:none;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    padding:8px 12px;
+    border-radius:7px;
+    font-size:13px;
+}
+
+nav a:hover{
+    color:var(--navy);
+    border-color:var(--navy);
+    background:var(--navy-soft);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px;
+}
+
+.panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.panel-head{
+    padding:16px 18px 12px;
+    border-bottom:1px solid var(--line);
+}
+
+.panel-head h2{
+    font-size:18px;
+    margin:0;
+}
+
+.panel-body{
+    padding:18px;
+}
+
+/* GOAL */
+
+.goal-item{
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+}
+
+.goal-item:last-child{
+    border-bottom:0;
+}
+
+.goal-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+}
+
+.goal-checkbox{
+    width:20px;
+    height:20px;
+    margin:2px 0 0 0;
+    cursor:pointer;
+    accent-color:var(--navy);
+    flex-shrink:0;
+}
+
+.goal-info{
+    flex:1;
+    min-width:0;
+}
+
+.goal-title{
+    font-size:15px;
+    font-weight:600;
+    line-height:1.4;
+    transition:.2s;
+}
+
+.goal-title.completed{
+    text-decoration:line-through;
+    color:var(--ink-faint);
+}
+
+.goal-meta{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:5px;
+}
+
+.badge{
+    display:inline-block;
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:999px;
+    background:var(--navy-soft);
+    color:var(--navy);
+    margin-left:6px;
+}
+
+.progress{
+    height:7px;
+    background:var(--paper);
+    border-radius:99px;
+    overflow:hidden;
+    margin-top:9px;
+}
+
+.fill{
+    height:100%;
+    background:var(--navy);
+    border-radius:99px;
+    transition:width .3s ease;
+}
+
+/* FORM */
+
+form{
+    display:grid;
+    gap:10px;
+}
+
+input,select{
+    width:100%;
+    font:14px Inter,Arial,sans-serif;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+}
+
+input:focus,
+select:focus{
+    outline:none;
+    border-color:var(--navy);
+}
+
+button{
+    font:600 13px Inter,Arial,sans-serif;
+    border-radius:7px;
+    padding:9px 13px;
+    cursor:pointer;
+}
+
+.primary{
+    background:var(--navy);
+    color:#fff;
+    border:1px solid var(--navy);
+}
+
+.primary:hover{
+    opacity:.9;
+}
+
+.primary:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+.message{
+    min-height:18px;
+    font-size:13px;
+}
+
+.success{
+    color:var(--success);
+}
+
+.error{
+    color:var(--danger);
+}
+
+.empty{
+    text-align:center;
+    padding:28px;
+    color:var(--ink-soft);
+    font-size:13px;
+}
+
+/* MOBILE */
+
+@media(max-width:700px){
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .wrap{
+        padding:20px 14px;
+    }
+
+    h1{
+        font-size:27px;
+    }
+}
+</style>
+</head>
+
+
+<body>
+
+<div class="wrap">
+
+<!-- HEADER -->
+
+<header class="top">
+
+    <div>
+        <h1>Study Goals</h1>
+
+        <div class="sub">
+            Set targets and keep track of what you've completed.
+        </div>
+    </div>
+
+    <div class="serif">
+        Hello, {{ user.name }}
+    </div>
+
+</header>
+
+
+<!-- NAVIGATION -->
+
+<nav>
+
+    <a href="{{ url_for('home') }}">
+        Home
+    </a>
+
+    <a href="{{ url_for('schedule') }}">
+        Schedule
+    </a>
+
+    <a href="{{ url_for('progress_page') }}">
+        Progress
+    </a>
+
+    <a href="{{ url_for('goals_page') }}">
+        Goals
+    </a>
+
+    <a href="{{ url_for('profile') }}">
+        Profile
+    </a>
+
+    <a href="{{ url_for('logout') }}">
+        Logout
+    </a>
+
+</nav>
+
+
+<div class="grid">
+
+
+<!-- ==================================
+     YOUR GOALS
+================================== -->
+
+<div class="panel">
+
+    <div class="panel-head">
+        <h2>Your goals</h2>
+    </div>
+
+    <div class="panel-body">
+
+        {% if goals %}
+
+            {% for g in goals %}
+
+                {% set pct =
+                    (g.completed_hours / g.target_hours * 100)
+                    if g.target_hours else 0
+                %}
+
+                <div class="goal-item">
+
+                    <div class="goal-row">
+
+                        <!-- CHECKBOX -->
+
+                        <input
+                            type="checkbox"
+                            class="goal-checkbox"
+                            data-goal-id="{{ g.id }}"
+                            {% if g.is_completed %}checked{% endif %}
+                        >
+
+                        <div class="goal-info">
+
+                            <!-- TITLE -->
+
+                            <div
+                                class="goal-title {% if g.is_completed %}completed{% endif %}"
+                                id="goal-title-{{ g.id }}"
+                            >
+
+                                {{ g.title }}
+
+                                <span
+                                    class="badge"
+                                    id="badge-{{ g.id }}"
+                                    {% if not g.is_completed %}
+                                    style="display:none;"
+                                    {% endif %}
+                                >
+                                    Completed
+                                </span>
+
+                            </div>
+
+
+                            <!-- SUBJECT + HOURS -->
+
+                            <div class="goal-meta">
+
+                                {{ g.subject.name if g.subject else 'Subject' }}
+
+                                ·
+
+                                {{ '%.1f'|format(g.completed_hours) }}
+
+                                /
+
+                                {{ '%.1f'|format(g.target_hours) }}
+
+                                hours
+
+                            </div>
+
+
+                            <!-- PROGRESS BAR -->
+
+                            <div class="progress">
+
+                                <div
+                                    class="fill"
+                                    style="width:{{ [pct,100]|min }}%"
+                                ></div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty">
+
+                No goals yet.
+
+                <br>
+
+                Add your first goal using the form.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ==================================
+     ADD GOAL
+================================== -->
+
+<div class="panel">
+
+    <div class="panel-head">
+        <h2>Add a goal</h2>
+    </div>
+
+    <div class="panel-body">
+
+        <form id="goalForm">
+
+            <!-- TITLE -->
+
+            <input
+                id="title"
+                type="text"
+                placeholder="Goal title"
+                required
+            >
+
+
+            <!-- SUBJECT -->
+
+            <select
+                id="subject_id"
+                required
+            >
+
+                {% if subjects %}
+
+                    {% for s in subjects %}
+
+                        <option value="{{ s.id }}">
+                            {{ s.name }}
+                        </option>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <option value="">
+                        No subjects available
+                    </option>
+
+                {% endif %}
+
+            </select>
+
+
+            <!-- TARGET HOURS -->
+
+            <input
+                id="target_hours"
+                type="number"
+                min="0.5"
+                step="0.5"
+                value="12"
+                placeholder="Target hours"
+                required
+            >
+
+
+            <!-- BUTTON -->
+
+            <button
+                id="addGoalButton"
+                class="primary"
+                type="submit"
+            >
+                Add goal
+            </button>
+
+
+            <!-- MESSAGE -->
+
+            <div
+                id="msg"
+                class="message"
+            ></div>
+
+        </form>
+
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   ADD GOAL
+===================================================== */
+
+const goalForm =
+    document.getElementById("goalForm");
+
+const titleInput =
+    document.getElementById("title");
+
+const subjectInput =
+    document.getElementById("subject_id");
+
+const targetHoursInput =
+    document.getElementById("target_hours");
+
+const addGoalButton =
+    document.getElementById("addGoalButton");
+
+const message =
+    document.getElementById("msg");
+
+
+goalForm.addEventListener("submit", async function(event){
+
+    event.preventDefault();
+
+    message.textContent = "";
+    message.className = "message";
+
+
+    const title =
+        titleInput.value.trim();
+
+    const subjectId =
+        Number(subjectInput.value);
+
+    const targetHours =
+        Number(targetHoursInput.value);
+
+
+    /* VALIDATION */
+
+    if(!title){
+
+        message.textContent =
+            "Please enter a goal title.";
+
+        message.classList.add("error");
+
+        return;
+    }
+
+
+    if(!subjectId){
+
+        message.textContent =
+            "Please select a subject.";
+
+        message.classList.add("error");
+
+        return;
+    }
+
+
+    if(!targetHours || targetHours < 0.5){
+
+        message.textContent =
+            "Target hours must be at least 0.5.";
+
+        message.classList.add("error");
+
+        return;
+    }
+
+
+    /* BUTTON LOADING */
+
+    addGoalButton.disabled = true;
+
+    addGoalButton.textContent =
+        "Adding...";
+
+
+    try{
+
+        /*
+         * Backend:
+         * POST /api/goals
+         */
+
+        const response = await fetch(
+            "{{ url_for('goals_api') }}",
+            {
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json",
+                    "Accept":"application/json"
+                },
+
+                body:JSON.stringify({
+
+                    title:title,
+
+                    subject_id:subjectId,
+
+                    target_hours:targetHours
+
+                })
+            }
+        );
+
+
+        const data =
+            await response.json();
+
+
+        if(response.ok && data.success){
+
+            message.textContent =
+                "Goal added successfully.";
+
+            message.classList.add(
+                "success"
+            );
+
+
+            /*
+             * Refresh the page so the
+             * new goal appears.
+             */
+
+            setTimeout(function(){
+
+                window.location.reload();
+
+            },400);
+
+
+        }else{
+
+            message.textContent =
+                data.error ||
+                "Could not add goal.";
+
+            message.classList.add(
+                "error"
+            );
+
+            addGoalButton.disabled =
+                false;
+
+            addGoalButton.textContent =
+                "Add goal";
+        }
+
+
+    }catch(error){
+
+        console.error(
+            "Add goal error:",
+            error
+        );
+
+
+        message.textContent =
+            "Could not connect to the server.";
+
+        message.classList.add(
+            "error"
+        );
+
+
+        addGoalButton.disabled =
+            false;
+
+        addGoalButton.textContent =
+            "Add goal";
+
+    }
+
+});
+
+
+/* =====================================================
+   CHECK / UNCHECK GOAL
+===================================================== */
+
+const checkboxes =
+    document.querySelectorAll(
+        ".goal-checkbox"
+    );
+
+
+checkboxes.forEach(function(checkbox){
+
+    checkbox.addEventListener(
+        "change",
+        async function(){
+
+            const checkboxElement =
+                this;
+
+            const goalId =
+                checkboxElement.dataset.goalId;
+
+            const completed =
+                checkboxElement.checked;
+
+
+            const titleElement =
+                document.getElementById(
+                    "goal-title-" + goalId
+                );
+
+
+            const badgeElement =
+                document.getElementById(
+                    "badge-" + goalId
+                );
+
+
+            /*
+             * Prevent double clicking while
+             * request is being processed.
+             */
+
+            checkboxElement.disabled =
+                true;
+
+
+            try{
+
+                /*
+                 * Backend:
+                 * PUT /api/goals/<goal_id>
+                 */
+
+                const response =
+                    await fetch(
+                        "/api/goals/" + goalId,
+                        {
+                            method:"PUT",
+
+                            headers:{
+                                "Content-Type":
+                                    "application/json",
+
+                                "Accept":
+                                    "application/json"
+                            },
+
+                            body:JSON.stringify({
+
+                                is_completed:
+                                    completed
+
+                            })
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if(response.ok && data.success){
+
+                    if(completed){
+
+                        titleElement.classList.add(
+                            "completed"
+                        );
+
+                        badgeElement.style.display =
+                            "inline-block";
+
+                    }else{
+
+                        titleElement.classList.remove(
+                            "completed"
+                        );
+
+                        badgeElement.style.display =
+                            "none";
+                    }
+
+
+                }else{
+
+                    /*
+                     * Server rejected request.
+                     * Restore checkbox.
+                     */
+
+                    checkboxElement.checked =
+                        !completed;
+
+                    alert(
+                        data.error ||
+                        "Could not update the goal."
+                    );
+                }
+
+
+            }catch(error){
+
+                console.error(
+                    "Goal update error:",
+                    error
+                );
+
+
+                /*
+                 * Restore checkbox if
+                 * server connection failed.
+                 */
+
+                checkboxElement.checked =
+                    !completed;
+
+
+                alert(
+                    "Could not connect to the server."
+                );
+
+
+            }finally{
+
+                checkboxElement.disabled =
+                    false;
+
+            }
+
+        }
+    );
+
+});
+
+</script>
+
+</body>
+</html>
