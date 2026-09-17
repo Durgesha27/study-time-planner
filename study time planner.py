@@ -12,6 +12,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# ==========================================
+# DATABASE MODELS
+# ==========================================
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -63,6 +66,9 @@ class Progress(db.Model):
     focus_score = db.Column(db.Integer, default=0)
     streak = db.Column(db.Integer, default=0)
 
+# ==========================================
+# AUTH MIDDLEWARE
+# ==========================================
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -98,18 +104,12 @@ def signup():
         if User.query.filter_by(email=email).first():
             return jsonify({'success': False, 'error': 'Email already exists'}), 400
         
-        user = User(
-            username=username,
-            email=email,
-            password=generate_password_hash(password),
-            name=name
-        )
+        user = User(username=username, email=email, password=generate_password_hash(password), name=name)
         db.session.add(user)
         db.session.commit()
         
         session['user_id'] = user.id
         session['username'] = user.username
-
         return jsonify({'success': True}), 200
     
     return render_template('loginsignup.html')
@@ -122,7 +122,6 @@ def login():
         password = data.get('password')
         
         user = User.query.filter_by(username=username).first()
-        
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['username'] = user.username
@@ -137,16 +136,16 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# ==========================================
+# PAGE ROUTING (MODERN FRONTEND BINDINGS)
+# ==========================================
 @app.route('/home')
 @login_required
 def home():
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     today = datetime.utcnow().strftime('%A').lower()
     
-    today_sessions = StudySession.query.filter_by(
-        user_id=session['user_id'],
-        day=today
-    ).all()
+    today_sessions = StudySession.query.filter_by(user_id=session['user_id'], day=today).all()
     
     week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())
     week_progress = db.session.query(db.func.sum(Progress.study_hours)).filter(
@@ -167,26 +166,22 @@ def home():
 @app.route('/schedule')
 @login_required
 def schedule():
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     subjects = Subject.query.filter_by(user_id=session['user_id']).all()
     sessions = StudySession.query.filter_by(user_id=session['user_id']).all()
     
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     schedule_data = {day.lower(): [] for day in days}
-    
     for s in sessions:
         schedule_data[s.day].append(s)
     
-    return render_template('schedule.html', 
-                         user=user,
-                         subjects=subjects,
-                         schedule=schedule_data,
-                         days=days)
+    return render_template('schedule.html', user=user, subjects=subjects, schedule=schedule_data, days=days)
 
 @app.route('/progress')
 @login_required
 def progress_page():
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
+    subjects = Subject.query.filter_by(user_id=session['user_id']).all()
     week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())
     
     weekly_stats = {}
@@ -198,40 +193,34 @@ def progress_page():
             Progress.date < date + timedelta(days=1)
         ).first()
         weekly_stats[date.strftime('%a')] = day_progress.study_hours if day_progress else 0
-    
-    return render_template('progress.html', user=user, weekly_stats=weekly_stats)
+
+    return render_template('progress.html', user=user, subjects=subjects, weekly_stats=weekly_stats)
 
 @app.route('/goals')
 @login_required
 def goals_page():
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     subjects = Subject.query.filter_by(user_id=session['user_id']).all()
     goals = Goal.query.filter_by(user_id=session['user_id']).all()
-    
     return render_template('goals.html', user=user, subjects=subjects, goals=goals)
 
 @app.route('/profile')
-@login_required
+@login_required  
 def profile():
-    # Change this:
-# user = User.query.get(session['user_id'])
-
-# To this:
     user = db.session.get(User, session['user_id'])
-
     subjects = Subject.query.filter_by(user_id=session['user_id']).all()
-    
     return render_template('profile.html', user=user, subjects=subjects)
 
+# ==========================================
+# BACKEND API ENGINE
+# ==========================================
 @app.route('/api/user/update', methods=['POST'])
 @login_required
 def update_user():
     data = request.get_json()
-    user = User.query.get(session['user_id'])
-    
+    user = db.session.get(User, session['user_id'])
     if 'name' in data:
         user.name = data['name']
-    
     db.session.commit()
     return jsonify({'success': True, 'user': {'id': user.id, 'name': user.name}})
 
@@ -240,10 +229,7 @@ def update_user():
 def subjects_api():
     if request.method == 'POST':
         data = request.get_json()
-        subject = Subject(
-            name=data['name'],
-            user_id=session['user_id']
-        )
+        subject = Subject(name=data['name'], user_id=session['user_id'])
         db.session.add(subject)
         db.session.commit()
         return jsonify({'success': True, 'subject': {'id': subject.id, 'name': subject.name}})
@@ -255,7 +241,6 @@ def subjects_api():
 @login_required
 def subject_detail(subject_id):
     subject = Subject.query.filter_by(id=subject_id, user_id=session['user_id']).first()
-    
     if not subject:
         return jsonify({'error': 'Not found'}), 404
     
@@ -275,6 +260,22 @@ def subject_detail(subject_id):
 def sessions_api():
     if request.method == 'POST':
         data = request.get_json()
+        # 1. Parse connection times to calculate duration automatically
+        try:
+            fmt = '%H:%M'
+            t1 = datetime.strptime(data['start_time'], fmt)
+            t2 = datetime.strptime(data['end_time'], fmt)
+            delta = t2 - t1
+            # Handle cross-midnight logs safely
+            duration_minutes = (delta.days * 24 * 60) + (delta.seconds // 60)
+            if duration_minutes < 0:
+                duration_minutes += 1440
+            duration_hours = duration_minutes / 60.0
+        except Exception:
+            duration_hours = 1.0
+            duration_minutes = 60
+            
+        # 2. Add Session record
         session_obj = StudySession(
             user_id=session['user_id'],
             subject_id=data['subject_id'],
@@ -285,9 +286,21 @@ def sessions_api():
             session_type=data.get('type', 'Focus')
         )
         db.session.add(session_obj)
+        
+        # 3. Automatically roll progress into active subject-specific goals
+        active_goals = Goal.query.filter_by(
+            user_id=session['user_id'],
+            subject_id=data['subject_id'],
+            is_completed=False
+        ).all()
+        for goal in active_goals:
+            goal.completed_hours += duration_hours
+            if goal.completed_hours >= goal.target_hours:
+                goal.is_completed = True
+                
         db.session.commit()
         return jsonify({'success': True, 'session': {'id': session_obj.id}})
-    
+        
     sessions = StudySession.query.filter_by(user_id=session['user_id']).all()
     return jsonify({'sessions': [{'id': s.id, 'title': s.title, 'day': s.day} for s in sessions]})
 
@@ -295,10 +308,8 @@ def sessions_api():
 @login_required
 def session_detail(session_id):
     study_session = StudySession.query.filter_by(id=session_id, user_id=session['user_id']).first()
-    
     if not study_session:
         return jsonify({'error': 'Not found'}), 404
-    
     db.session.delete(study_session)
     db.session.commit()
     return jsonify({'success': True})
@@ -307,35 +318,70 @@ def session_detail(session_id):
 @login_required
 def goals_api():
     if request.method == 'POST':
-        data = request.get_json()
+        data = request.get_json() or {}
+        title = str(data.get('title', '')).strip()
+        if not title:
+            return jsonify({'success': False, 'error': 'Goal title is required'}), 400
+            
+        try:
+            target_hours = float(data.get('target_hours', 12))
+        except (TypeError, ValueError):
+            target_hours = 12
+            
+        if target_hours <= 0:
+            return jsonify({'success': False, 'error': 'Target hours must be greater than 0'}), 400
+            
+        subject_id = data.get('subject_id')
+        subject = None
+        if subject_id:
+            subject = Subject.query.filter_by(id=subject_id, user_id=session['user_id']).first()
+        if not subject:
+            subject = Subject.query.filter_by(user_id=session['user_id']).first()
+            
+        if not subject:
+            return jsonify({'success': False, 'error': 'Please create a subject first from Profile/Home.'}), 400
+            
         goal = Goal(
             user_id=session['user_id'],
-            subject_id=data['subject_id'],
-            title=data['title'],
-            target_hours=data.get('target_hours', 12)
+            subject_id=subject.id,
+            title=title,
+            target_hours=target_hours,
+            completed_hours=0,
+            is_completed=False
         )
         db.session.add(goal)
         db.session.commit()
-        return jsonify({'success': True, 'goal': {'id': goal.id}})
-    
+        return jsonify({'success': True, 'goal': {'id': goal.id, 'title': goal.title}})
+        
     goals = Goal.query.filter_by(user_id=session['user_id']).all()
-    return jsonify({'goals': [{'id': g.id, 'title': g.title} for g in goals]})
+    return jsonify({
+        'goals': [
+            {
+                'id': g.id,
+                'title': g.title,
+                'subject_id': g.subject_id,
+                'target_hours': g.target_hours,
+                'completed_hours': g.completed_hours,
+                'is_completed': g.is_completed
+            } for g in goals
+        ]
+    })
 
 @app.route('/api/goals/<int:goal_id>', methods=['PUT', 'DELETE'])
 @login_required
 def goal_detail(goal_id):
     goal = Goal.query.filter_by(id=goal_id, user_id=session['user_id']).first()
-    
     if not goal:
         return jsonify({'error': 'Not found'}), 404
-    
+        
     if request.method == 'PUT':
         data = request.get_json()
+        # Allows you to toggle check boxes between True and False without breaking formatting
         if 'is_completed' in data:
-            goal.is_completed = data['is_completed']
+            goal.is_completed = bool(data['is_completed'])
         db.session.commit()
         return jsonify({'success': True})
-    
+        
     elif request.method == 'DELETE':
         db.session.delete(goal)
         db.session.commit()

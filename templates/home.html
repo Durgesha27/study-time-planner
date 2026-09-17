@@ -1137,16 +1137,6 @@
         </a>
 
 
-        <!-- Progress -->
-
-        <a
-            href="{{ url_for('progress_page') }}">
-
-            📈 &nbsp; Progress
-
-        </a>
-
-
         <!-- Goals -->
 
         <a
@@ -1446,39 +1436,35 @@
 
                 try {
 
-                    const res =
-                        await window.storage.get(
-                            STORAGE_KEY,
-                            false
+                    // Fetch subjects from Flask backend API (database)
+                    const apiRes =
+                        await fetch(
+                            '/api/subjects'
                         );
 
-
                     if (
-                        res &&
-                        res.value
+                        apiRes.ok
                     ) {
 
-                        const parsed =
-                            JSON.parse(
-                                res.value
-                            );
-
+                        const apiData =
+                            await apiRes.json();
 
                         state.subjects =
-                            parsed.subjects ||
-                            [];
-
-
-                        state.sessions =
-                            parsed.sessions ||
-                            [];
+                            (apiData.subjects || [])
+                                .map(s => ({
+                                    id: s.id.toString(),
+                                    name: s.name,
+                                    color: '#2B4570',
+                                    targetHours: 5
+                                }));
 
                     }
 
                 } catch (e) {
 
                     console.log(
-                        'No existing planner data.'
+                        'Error fetching subjects from backend:',
+                        e
                     );
 
                 }
@@ -1496,6 +1482,10 @@
 
             async function save() {
 
+                // Note: Subjects are now saved directly to Flask API via POST requests
+                // when added/updated/deleted. This function is kept for any future
+                // localStorage caching if needed.
+                
                 try {
 
                     await window.storage.set(
@@ -1506,8 +1496,8 @@
 
                 } catch (e) {
 
-                    toast(
-                        "Couldn't save — changes may not persist"
+                    console.log(
+                        "Note: Local storage unavailable"
                     );
 
                 }
@@ -2505,25 +2495,37 @@
                             )
                         ) {
 
-                            state.subjects =
-                                state.subjects.filter(
-                                    s =>
-                                        s.id !==
-                                        id
-                                );
+                            // Delete from Flask API
+                            fetch(`/api/subjects/${id}`, {
+                                method: 'DELETE'
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    state.subjects =
+                                        state.subjects.filter(
+                                            s =>
+                                                s.id !==
+                                                id
+                                        );
 
+                                    state.sessions =
+                                        state.sessions.filter(
+                                            s =>
+                                                s.subjectId !==
+                                                id
+                                        );
 
-                            state.sessions =
-                                state.sessions.filter(
-                                    s =>
-                                        s.subjectId !==
-                                        id
-                                );
-
-
-                            save();
-
-                            renderAll();
+                                    renderAll();
+                                    toast('Subject deleted');
+                                } else {
+                                    toast('Error deleting subject');
+                                }
+                            })
+                            .catch(err => {
+                                console.error('Error:', err);
+                                toast('Failed to delete subject');
+                            });
 
                         }
 
@@ -2713,18 +2715,36 @@
                             sub
                         ) {
 
-                            sub.name =
+                            const newName =
                                 e.target.value.trim() ||
                                 sub.name;
 
-
-                            e.target.value =
-                                sub.name;
-
-
-                            save();
-
-                            renderSessions();
+                            // Update in Flask API
+                            fetch(`/api/subjects/${id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    name: newName
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    sub.name = newName;
+                                    e.target.value = sub.name;
+                                    renderSessions();
+                                } else {
+                                    e.target.value = sub.name;
+                                    toast('Error updating subject');
+                                }
+                            })
+                            .catch(err => {
+                                console.error('Error:', err);
+                                e.target.value = sub.name;
+                                toast('Failed to update subject');
+                            });
 
                         }
 
@@ -3063,26 +3083,38 @@
                                 );
 
 
-                            state.subjects.push(
-                                {
-                                    id: uid(),
-
-                                    name: name,
-
-                                    color:
-                                        newSubjectColor,
-
-                                    targetHours:
-                                        hours
+                            // Send to Flask API to save to database
+                            fetch('/api/subjects', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    name: name
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.subject) {
+                                    // Add to local state with database ID
+                                    state.subjects.push({
+                                        id: data.subject.id.toString(),
+                                        name: data.subject.name,
+                                        color: newSubjectColor,
+                                        targetHours: hours
+                                    });
+                                    
+                                    resetAddSubjectBlock();
+                                    renderAll();
+                                    toast('Subject added successfully');
+                                } else {
+                                    toast('Error adding subject');
                                 }
-                            );
-
-
-                            save();
-
-                            resetAddSubjectBlock();
-
-                            renderAll();
+                            })
+                            .catch(err => {
+                                console.error('Error:', err);
+                                toast('Failed to add subject');
+                            });
 
                         }
                     );
