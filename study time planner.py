@@ -35,6 +35,18 @@ class Subject(db.Model):
     
     sessions = db.relationship('StudySession', backref='subject', lazy=True)
     goals = db.relationship('Goal', backref='subject', lazy=True)
+    sessions = db.relationship(
+        'StudySession',
+        backref='subject',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
+    goals = db.relationship(
+        'Goal',
+        backref='subject',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
 
 class StudySession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
