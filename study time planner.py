@@ -67,7 +67,7 @@ class Progress(db.Model):
     streak = db.Column(db.Integer, default=0)
 
 # ==========================================
-# AUTH MIDDLEWARE
+# AUTH MIDDLEWARE & ROUTING
 # ==========================================
 def login_required(f):
     @wraps(f)
@@ -137,14 +137,13 @@ def logout():
     return redirect(url_for('login'))
 
 # ==========================================
-# PAGE ROUTING (MODERN FRONTEND BINDINGS)
+# PAGE ROUTING
 # ==========================================
 @app.route('/home')
 @login_required
 def home():
     user = db.session.get(User, session['user_id'])
     today = datetime.utcnow().strftime('%A').lower()
-    
     today_sessions = StudySession.query.filter_by(user_id=session['user_id'], day=today).all()
     
     week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())
@@ -173,7 +172,8 @@ def schedule():
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     schedule_data = {day.lower(): [] for day in days}
     for s in sessions:
-        schedule_data[s.day].append(s)
+        if s.day in schedule_data:
+            schedule_data[s.day].append(s)
     
     return render_template('schedule.html', user=user, subjects=subjects, schedule=schedule_data, days=days)
 
@@ -212,7 +212,7 @@ def profile():
     return render_template('profile.html', user=user, subjects=subjects)
 
 # ==========================================
-# BACKEND API ENGINE
+# API ENDPOINTS
 # ==========================================
 @app.route('/api/user/update', methods=['POST'])
 @login_required
@@ -260,22 +260,18 @@ def subject_detail(subject_id):
 def sessions_api():
     if request.method == 'POST':
         data = request.get_json()
-        # 1. Parse connection times to calculate duration automatically
         try:
             fmt = '%H:%M'
             t1 = datetime.strptime(data['start_time'], fmt)
             t2 = datetime.strptime(data['end_time'], fmt)
             delta = t2 - t1
-            # Handle cross-midnight logs safely
             duration_minutes = (delta.days * 24 * 60) + (delta.seconds // 60)
             if duration_minutes < 0:
                 duration_minutes += 1440
             duration_hours = duration_minutes / 60.0
         except Exception:
             duration_hours = 1.0
-            duration_minutes = 60
             
-        # 2. Add Session record
         session_obj = StudySession(
             user_id=session['user_id'],
             subject_id=data['subject_id'],
@@ -287,7 +283,6 @@ def sessions_api():
         )
         db.session.add(session_obj)
         
-        # 3. Automatically roll progress into active subject-specific goals
         active_goals = Goal.query.filter_by(
             user_id=session['user_id'],
             subject_id=data['subject_id'],
@@ -299,10 +294,10 @@ def sessions_api():
                 goal.is_completed = True
                 
         db.session.commit()
-        return jsonify({'success': True, 'session': {'id': session_obj.id}})
+        return jsonify({'success': True, 'session': {'id': session_obj.id, 'title': session_obj.title, 'day': session_obj.day, 'start_time': session_obj.start_time, 'end_time': session_obj.end_time}})
         
     sessions = StudySession.query.filter_by(user_id=session['user_id']).all()
-    return jsonify({'sessions': [{'id': s.id, 'title': s.title, 'day': s.day} for s in sessions]})
+    return jsonify({'sessions': [{'id': s.id, 'title': s.title, 'day': s.day, 'start_time': s.start_time, 'end_time': s.end_time, 'subject_id': s.subject_id} for s in sessions]})
 
 @app.route('/api/sessions/<int:session_id>', methods=['DELETE'])
 @login_required
@@ -376,7 +371,6 @@ def goal_detail(goal_id):
         
     if request.method == 'PUT':
         data = request.get_json()
-        # Allows you to toggle check boxes between True and False without breaking formatting
         if 'is_completed' in data:
             goal.is_completed = bool(data['is_completed'])
         db.session.commit()
