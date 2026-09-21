@@ -84,6 +84,39 @@ class Progress(db.Model):
     focus_score = db.Column(db.Integer, default=0)
     streak = db.Column(db.Integer, default=0)
 
+    # Place this code directly below your existing models (User, Subject, StudySession, Goal, Progress)
+# DO NOT alter the original classes; this appends cleanly to your schema setup.
+
+class Friendship(db.Model):
+    __tablename__ = 'friendship'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    friend_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(20), default='accepted')  # accepted, pending
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Bi-directional relationships to query friends easily
+    user = db.relationship('User', foreign_keys=[user_id], backref='friendships')
+    friend = db.relationship('User', foreign_keys=[friend_id])
+
+class ActiveTimer(db.Model):
+    """
+    Saves the absolute timestamp when a timer starts.
+    If the app crashes, goes to the background, or closes, 
+    elapsed time = (Current Time - start_time) + paused_offset_seconds.
+    """
+    __tablename__ = 'active_timer'
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    start_time = db.Column(db.DateTime, nullable=True) # None means currently paused
+    paused_offset_seconds = db.Column(db.Integer, default=0) # Accumulated time from previous pause segments
+    is_active = db.Column(db.Boolean, default=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('active_timer', uselist=False, cascade='all, delete-orphan'))
+    subject = db.relationship('Subject')
+
+
 # ==========================================
 # AUTH MIDDLEWARE & ROUTING
 # ==========================================
